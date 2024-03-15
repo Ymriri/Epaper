@@ -23,6 +23,8 @@
 
 ![效果图](./out/test_0.png)
 
+实物图
+![实物图](out/showImg.png)
 
 ### 爬虫
 * 从[一言](https://developer.hitokoto.cn/sentence/demo.html)获得句子（为了最佳显示效果，限制句子长度） 
