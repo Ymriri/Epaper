@@ -27,7 +27,7 @@
 ![实物图](out/showImg.png)
 
 ### 爬虫
-* 从[一言](https://developer.hitokoto.cn/sentence/demo.html)获得句子（为了最佳显示效果，限制句子长度） 
+* 从[一言](https://developer.hitokoto.cn/sentence/demo.html)获得句子（为了最佳显示效果，限制句子长度）
 * 封面图，从原本[艺术油画](http://en.most-famous-paintings.com/MostFamousPaintings.nsf/ListOfTop1000MostPopularPainting?OpenForm) 切换爬取到公众号：**为你读诗**每日的推送封面
 
 
