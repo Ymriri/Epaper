@@ -164,4 +164,5 @@ python/
 
 *.jpeg
 
-
+# remove token
+GetImgUrl/GetTargetUrls.py
