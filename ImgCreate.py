@@ -262,7 +262,7 @@ class ImgCreate(object):
             img_concat.paste(img_info, (0, img_date.height + img_todo.height))
             img_concat.paste(img_photo, (img_date.width, 0))
         self.image = img_concat
-        self.image.save(self.output_path + "/test_0.png")
+        self.image.save("today7C/" + self.date['date'] + "_" + self.date["user"] + ".png")
         buffs = self.buffImg(self.dithering())
         if len(buffs) == self.EINK_HEIGHT * self.EINK_WIDTH / 2:
             if "不是所有痛苦都能分担" in self.text or "不是所有痛苦都能分担" in self.description_text:
