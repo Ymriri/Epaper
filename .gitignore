@@ -166,3 +166,5 @@ python/
 
 # remove token
 GetImgUrl/GetTargetUrls.py
+
+config.json
