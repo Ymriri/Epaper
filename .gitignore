@@ -168,3 +168,6 @@ python/
 GetImgUrl/GetTargetUrls.py
 
 config.json
+today
+out
+tempOut

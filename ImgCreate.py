@@ -6,14 +6,15 @@
 """
 # 导入json解析
 import json
+import os
 
 from PIL import Image, ImageDraw, ImageFont
 
 
 class ImgCreate(object):
 
-    def __init__(self, mode: str = "Portrait", head_img_path: str = "640_1.jpeg",
-                 description_text: str = "An introduction to oil painting", text: str = "Hello, World!",
+    def __init__(self, mode: str = "Portrait",
+                 description_text: list = "An introduction to oil painting", text: str = "Hello, World!",
                  date: json = None):
         """
         根据配置自动生成图片
@@ -43,7 +44,7 @@ class ImgCreate(object):
         self.text_font_size = 20
         # The size of the day
         self.day_font_size = 100
-        self.output_path = "./out"
+        self.output_path = "./today"
         # connect Img from the path
         self.input_path = "./inputImg"
         # Golden section line
@@ -52,7 +53,7 @@ class ImgCreate(object):
 
     def load(self):
         # Load the image
-        image = Image.open(self.input_path + "/" + self.head_img_path)
+        image = Image.open(self.head_img_path)
         image = image.resize((int(self.EINK_WIDTH), int(self.EINK_HEIGHT * 0.55)))
         self.image = image
         # 默认主题是黑色 中间横向
@@ -74,7 +75,8 @@ class ImgCreate(object):
                 0, 0, 0) * 249)
         # Convert the soruce image to the 7 colors, dithering if needed
         image_7color = self.image.convert("RGB").quantize(palette=pal_image)
-        image_7color.save(self.output_path + "/7color.png")
+
+        image_7color.save(self.output_path + "/" + self.date['date'] + "_" + self.date["user"] + ".png")
         self.pImg = image_7color
         return image_7color
 
@@ -120,6 +122,10 @@ class ImgCreate(object):
         img = img.resize((5, 5), resample=0)
         dominant_color = img.getpixel((2, 2))
         self.domain_color = dominant_color
+        # print(self.domain_color)
+        if self.domain_color[0] > 200 and self.domain_color[1] > 200 and self.domain_color[2] > 200:
+            self.domain_color = (0, 0, 0)
+            dominant_color = (0, 0, 0)
         return dominant_color
 
     def draw_img_add(self, img, mode: str = 'text', text: str = "06", size=100, fillDomain: bool = False,
@@ -173,12 +179,20 @@ class ImgCreate(object):
         #
         weather_1 = self.change_mod(file_path=self.input_path + "/" + self.date['weather'][0])
         weather_1 = weather_1.resize((self.svg_size, self.svg_size), resample=0)
-        weather_2 = self.change_mod(file_path=self.input_path + "/" + self.date['weather'][1])
-        weather_2 = weather_2.resize((self.svg_size, self.svg_size), resample=0)
-        weather_3 = self.change_mod(file_path=self.input_path + "/" + self.date['weather'][2])
-        weather_3 = weather_3.resize((self.svg_size, self.svg_size), resample=0)
+        weather_2 = None
+        if self.date['weather'][1]:
+            weather_2 = self.change_mod(file_path=self.input_path + "/" + self.date['weather'][1])
+            weather_2 = weather_2.resize((self.svg_size, self.svg_size), resample=0)
+        weather_3 = None
+        if self.date['weather'][2]:
+            weather_3 = self.change_mod(file_path=self.input_path + "/" + self.date['weather'][2])
+            weather_3 = weather_3.resize((self.svg_size, self.svg_size), resample=0)
+        # 底下的日历
+        gift = self.change_mod(file_path=self.input_path + "/" + "日历.png")
+        gift = gift.resize((30, 30), resample=0)
+
         weather_4 = None
-        if len(self.date['weather']) > 3:
+        if self.date['weather'][3]:
             """
             节假日 特殊时间提醒
             """
@@ -189,30 +203,35 @@ class ImgCreate(object):
             # load head_img
             img_concat.paste(img_1, (0, 0))
             # draw the img description
-            self.draw_img_add(img_concat, mode='text', text=self.description_text, size=15,
+            self.draw_img_add(img_concat, mode='text', text=self.text, size=15,
                               position=(5, int(self.EINK_HEIGHT * 0.618 - 30)))
             # draw line
             self.draw_img_add(img_concat, mode='line', fillDomain=True)
             # 加载天气 20 作为界限
             img_concat.paste(weather_1, (int(self.midd + 40), int(self.EINK_HEIGHT * 0.618 - 20)))
-            img_concat.paste(weather_2, (int(self.midd + 90), int(self.EINK_HEIGHT * 0.618 - 20)))
+            # 移除明天天气
+            if weather_2:
+                img_concat.paste(weather_2, (int(self.midd + 80), int(self.EINK_HEIGHT * 0.618 - 20)))
             if weather_4:
-                img_concat.paste(weather_4, (int(self.midd + 140), int(self.EINK_HEIGHT * 0.618 - 20)))
-            img_concat.paste(weather_3, (int(self.EINK_WIDTH - 50), int(self.EINK_HEIGHT * 0.618 - 20)))
+                img_concat.paste(weather_4, (int(self.midd + 130), int(self.EINK_HEIGHT * 0.618 - 20)))
+            if weather_3:
+                img_concat.paste(weather_3, (int(self.EINK_WIDTH - 50), int(self.EINK_HEIGHT * 0.618 - 20)))
+
+            img_concat.paste(gift, (int((self.EINK_WIDTH - 20 * 10) / 2), int(self.EINK_HEIGHT - 35)))
             # draw month
-            self.draw_img_add(img_concat, mode='text', text=self.date["month"] + "|", size=20,
-                              position=(self.midd + 50, int(self.EINK_HEIGHT * 0.618 + 100)))
+            self.draw_img_add(img_concat, mode='text', text=self.date["month"] + "|", size=30,
+                              position=(self.midd + 60, int(self.EINK_HEIGHT * 0.618 + 100)))
             # draw day
             self.draw_img_add(img_concat, mode='text', text=self.date["day"], size=self.day_font_size,
-                              position=(self.midd + 80, int(self.EINK_HEIGHT * 0.618 + 20)), fillDomain=True)
+                              position=(self.midd + 90, int(self.EINK_HEIGHT * 0.618 + 20)), fillDomain=True)
             # week and holiday
             self.draw_img_add(img_concat, mode='text', text=self.date["week"], size=20,
-                              position=(self.midd + 50, int(self.EINK_HEIGHT * 0.618 + 150)))
+                              position=(self.midd + 60, int(self.EINK_HEIGHT * 0.618 + 150)))
 
             self.draw_img_add(img_concat, mode='text',
-                              text="日历©Ymri  " + str(self.date['dayCount']) + "/" + str(self.date['yearCount']),
+                              text="©Ymri  " + str(self.date['dayCount']) + "/" + str(self.date['yearCount']),
                               size=20,
-                              position=(int((self.EINK_WIDTH - 20 * 10) / 2), int(self.EINK_HEIGHT - 35)))
+                              position=(int((self.EINK_WIDTH - 20 * 10) / 2 + 30), int(self.EINK_HEIGHT - 35)))
             # 节气
             # self.draw_img_add(img_concat, mode='text', text="春风", size=20,
             #                   position=(self.midd + 30, int(self.EINK_HEIGHT * 0.618 - 20)))
@@ -222,10 +241,20 @@ class ImgCreate(object):
             # self.draw_img_add(img_concat, mode='text', text="星期日 谷雨 母亲节", size=20,
             #                   position=(self.midd + 40, int(self.EINK_HEIGHT * 0.618 + 150)))
 
-            # 阴历
+            #
+            if len(self.description_text) == 1:
+                self.draw_img_add(img_concat, mode='text', text=self.description_text[0], size=20,
+                                  position=(10, int(self.EINK_HEIGHT * 0.618 + 100)))
+            elif len(self.description_text) > 2:
 
-            self.draw_img_add(img_concat, mode='text', text=self.text, size=20,
-                              position=(10, int(self.EINK_HEIGHT * 0.618 + 100)))
+                for index, i in enumerate(self.description_text):
+                    self.draw_img_add(img_concat, mode='text', text=i, size=20,
+                                      position=(10, int(self.EINK_HEIGHT * 0.618 + 50 + 40 * index)))
+            else:
+                self.draw_img_add(img_concat, mode='text', text=self.description_text[0], size=20,
+                                  position=(10, int(self.EINK_HEIGHT * 0.618 + 80)))
+                self.draw_img_add(img_concat, mode='text', text=self.description_text[1], size=20,
+                                  position=(10, int(self.EINK_HEIGHT * 0.618 + 120)))
 
         elif DisplayMode == "Landscape":
             img_concat.paste(img_date, (0, 0))
@@ -236,20 +265,110 @@ class ImgCreate(object):
         self.image.save(self.output_path + "/test_0.png")
         buffs = self.buffImg(self.dithering())
         if len(buffs) == self.EINK_HEIGHT * self.EINK_WIDTH / 2:
-            print("Success")
+            if "不是所有痛苦都能分担" in self.text or "不是所有痛苦都能分担" in self.description_text:
+                print(self.domain_color)
+            # print("Success")
+
+
+def saveImg(path, new_name):
+    # 读取图片
+    img = Image.open(path)
+    img.save(new_name)
 
 
 if __name__ == "__main__":
-    date = {
-        "img": "test.jpeg",
-        "weather": ["下雨.png", "太阳.png", "新月1.png", "烟花.png"],
-        "month": "03",
-        "day": "15",
-        "week": "星期日 初六",
-        "dayCount": 100,
-        "yearCount": 366
-    }
-    imgCreate = ImgCreate(date=date)
-    # 拼接生成图像
-    imgCreate.connection()
 
+    # file_list = ["GetImgUrl/为你读诗.csv", "GetImgUrl/为你读诗_0.csv", "GetImgUrl/为你读诗_1.csv", "GetImgUrl/为你读诗_2.csv","GetImgUrl/为你读诗_3.csv"]
+    # ret = []
+    # for i in file_list:
+    #     dataClear = DataClear(file_path=i, img_path="Img")
+    #     ret.append(dataClear.title_img_connect())
+    folder_path = "./tempImg/month"
+    files_and_folders = os.listdir(folder_path)
+    ret = []
+    # 遍历并打印
+    for file_or_folder in files_and_folders:
+        # print(file_or_folder)
+        if file_or_folder == "month" or file_or_folder == "weather24":
+            continue
+        tempTitle = {"img": folder_path + "/" + file_or_folder,
+                     "digest": str(file_or_folder).split("___")[1].replace(".jpg", "").replace("jepg", ""),
+                     "title": str(file_or_folder).split("___")[0]}
+
+        title = str(file_or_folder).split("___")[0].split("：")
+        if len(title) > 1:
+            tempTitle["title"] = title[1]
+        else:
+            tempTitle["title"] = title[0]
+        # title 清楚不可见字符
+        tempTitle["title"] = tempTitle["title"].replace('\u200B', '').replace("\"", "").replace("”", "").replace("“",
+                                                                                                                 "")
+        tempTitle["digest"] = tempTitle["digest"].replace('\u200B', '').replace("\"", "").replace("”", "").replace("“",
+                                                                                                                   "")
+        # title 使用短的，digest使用长的
+        if len(tempTitle["title"]) < len(tempTitle["digest"]):
+            ret.append(tempTitle)
+        else:
+            tempTitle["title"], tempTitle["digest"] = tempTitle["digest"], tempTitle["title"]
+        ret.append(tempTitle)
+    # exit(1)
+    # 读取整个文件
+    for j in ret:
+        # for j in i:
+        date = {
+            # 相对路径
+            "img": j["img"],
+            "weather": ["太阳.png", "", "moon_2.png", ""],
+            "month": "03",
+            "day": "22",
+            "week": "星期五 二月十三",
+            "dayCount": 82,
+            "yearCount": 366
+        }
+        # text 清除分段
+        desc_list = [j["digest"]]
+        if len(j['digest']) > 11:
+            # 清除：前面的内容
+            temp_str = j['digest'].split("：")
+            if len(temp_str) > 1:
+                temp_str = temp_str[1]
+            else:
+                temp_str = j['digest']
+            # 分割
+            temp_str = j['digest'].split("，")
+
+            if len(temp_str) < 1:
+                pass
+            else:
+                desc_list = []
+                # 重新拼接
+                for index, jj in enumerate(temp_str):
+                    if index == len(temp_str) - 1:
+                        desc_list.append(jj.replace("。", "").replace(".", "") + "。")
+                    else:
+                        desc_list.append(jj + "，")
+        # 清除无用的
+        temp_text = j["title"].replace("\n", "").replace("\"", "")
+        # check  all length < 11
+        if len(temp_text) > 11 or len(desc_list[0]) > 11 or len(desc_list[0]) > 11:
+            continue
+        #
+        new_file_name = "lastImg/month/" + j["title"] + "___" + j["digest"] + ".jpg"
+        # saveImg(j["img"], new_file_name)
+        imgCreate = ImgCreate(date=date, text=temp_text, description_text=desc_list)
+        imgCreate.connection()
+# date = {
+#     # 相对路径
+#     "img": "Img/人间一趟，不妨大胆一点.jpeg",
+#     "weather": ["太阳.png", "", "moon_2.png", ""],
+#     "month": "03",
+#     "day": "22",
+#     "week": "星期五 二月十三",
+#     "dayCount": 82,
+#     "yearCount": 366
+# }
+# # 7durmakrqqmxmhtm
+# # MojdVspka0PuL7puzXPSJSjWOVSE2bX2
+# imgCreate = ImgCreate(date=date, text="人间一趟，不妨大胆一点", description_text="天冷起来了，想到一些温暖的事要做")
+# # 拼接生成图像
+# imgCreate.connection()
