@@ -2,6 +2,8 @@
 
 复刻少数派电子日历：https://sspai.com/post/82704
 
+这个仓库是残次品，汇总完全版见：https://github.com/Ymriri/esp32_7color
+
 材料：
 
 * 微雪彩色墨水屏5.6寸(F)600*448分辨率
